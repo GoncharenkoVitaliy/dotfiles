@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# Проверка на наличие аргументов - name_users
+[ $# -eq 0 ] && read -rp "Enter name user for removed: " nameUserArray || nameUserArray=$@
+
+# Проходим пр списку users и удаляем
+for user in $nameUserArray; do
+    sudo userdel -r $user
+done

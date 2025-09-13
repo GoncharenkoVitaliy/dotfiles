@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+
+# Проверка на запуск от root
+if [ "$(id -u)" != 0 ]; then
+    echo Permissions deny >&2
+    exit 1
+fi
+
+# @=========================== Variebles ========================
+file=/var/list_users.csv
+users=$(cut -d' ' -f2,3,5 $file | tail -n +2 | tr '[:upper:]' '[:lower:]')
+oldIFS=$IFS
+
+# @=========================== Function =========================
+# Добавление прав root
+sudoers_privileges(){
+    # echo "проверка sudoers"
+    local var_name=$1
+
+    if [ "$var_name" = "admin" ];then
+        if ! grep "$var_name" /etc/sudoers; then
+            #echo Добавляем права root для пользователя: $var_name
+            sudo cp /etc/sudoers{,.bkp}
+            echo "$var_name ALL=(ALL) ALL" | tee -a /etc/sudoers > /dev/null 2>&1
+        fi
+    elif ! grep "%$var_name" /etc/sudoers; then
+        #echo Добавляем права root для группы: $var_name
+        sudo cp /etc/sudoers{,.bkp}
+        echo "%$var_name ALL=(ALL) ALL" | tee -a /etc/sudoers > /dev/null 2>&1
+    fi
+}
+# Добавление пароля для пользователя
+get_password(){
+    local username=$1
+    local pass='123456'
+
+    echo "$username:$pass" | sudo chpasswd > /dev/null 2>&1
+
+    # Устанавливаем требование смены пароля при следующем входе
+    sudo passwd --expire "$user" > /dev/null 2>&1
+}
+
+# Создаем Пользователя и группы 
+create_user(){
+    local count=1
+    local base_user="$1"
+    local group="$2"
+    #local shell=/sbin/nologin
+    local shell=/bin/bash
+
+    # Проверяем и создаем группу
+	if ! getent group "$group" > /dev/null 2>&1; then
+        sudo groupadd "$group"
+
+        if [ "$group" = "it" ] || [ "$group" = "security" ]; then
+            sudoers_privileges "$group"
+        fi    
+    fi
+
+    # Проверяем и создаем пользователя (с обработкой существующих имен)
+    local user="$base_user"
+    while id -u "$user" > /dev/null 2>&1; do
+        user="${base_user}${count}"
+        count=$((count + 1))
+        echo "Пользователь '$base_user' существует. Пробуем имя: '$user'"
+        if [ "$count" -gt 1000 ]; then # Добавлена защита от бесконечного цикла
+            echo "Ошибка: Слишком много попыток создать пользователя с уникальным именем."
+            return 1
+        fi
+    done
+    if [ "$user" = "admin" ]; then
+        sudoers_privileges "$user"
+        shell=/bin/bash
+    fi
+    sudo useradd "$user" -m -g "$group" -s "$shell"
+    get_password "$user"
+    echo "Пользователь '$user' успешно создан."
+    echo
+}
+
+# @========================== Main Body =========================
+# Проверяем, заданны ли имя пользователя и группа/группы
+if [ ! -z $2 ];then
+    user=$1
+    group=$2
+    create_user $user $group
+elif [ -f $file ];then
+    IFS=$'\n'
+    for line in $users;do
+        user=$(echo "$line" |cut -c1).$(echo "$line" |cut -d' ' -f2)
+        group=$(echo "$line" |cut -d' ' -f3)
+
+        create_user $user $group $line
+    done
+    IFS=$oldIFS
+else
+    echo Welcom!
+
+    select option in "Add user" "Show users" "Exit";do
+        case $option in
+            "Add user")
+                read -r -p "Введите имя пользователя: " user
+                read -r -p "Введите имя имя группы: " group
+                create_user $user $group ;;
+            "Show users") cut -d: -f1 /etc/passwd ;;
+            "Exit")
+                echo "By!"
+                break ;;
+            *) echo Wrong option ;;
+        esac
+    done
+fi
+
+# !**** создать пользователя со своей группой а остальные группы добавить group=[$2 $3 $4 $5]

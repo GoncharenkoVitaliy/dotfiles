@@ -122,3 +122,9 @@ alias dotfiles="~/settings/scripts/manage-settings.sh"
 alias dotsync="~/settings/scripts/sync-dotfiles.sh"
 alias dotpush="~/settings/scripts/sync-dotfiles.sh sync"
 alias dotpull="~/settings/scripts/sync-dotfiles.sh pull"
+
+# Add settings scripts to PATH
+export PATH="$HOME/settings/scripts:$PATH"
+
+# User scripts management alias
+alias scripts="~/settings/scripts/manage-user-scripts.sh"

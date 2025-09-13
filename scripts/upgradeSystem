@@ -1,0 +1,77 @@
+#! /usr/bin/env bash
+
+echo "Starting system update..."
+
+# --- 1. Обновление для APT (Debian, Ubuntu, Pop!_OS, Mint) ---
+if command -v apt &> /dev/null; then
+    echo "Detected APT package manager."
+    sudo apt update
+    sudo apt upgrade -y 
+    sudo apt full-upgrade -y # -y для автоматического подтверждения
+    sudo dpkg --configure -a 
+    sudo apt autoremove -y
+    sudo apt autoclean 
+    sudo apt clean
+    echo "APT packages updated."
+elif command -v apt-get &> /dev/null; then # Fallback для старых систем или если 'apt' не установлен
+    echo "Detected apt-get package manager."
+    sudo apt-get update
+    sudo apt-get dist-upgrade -y # dist-upgrade аналогичен full-upgrade для apt-get
+    sudo apt-get autoremove -y
+    echo "apt-get packages updated."
+fi
+
+# --- 2. Обновление для Pacman (Arch, Manjaro, EndeavourOS) ---
+if command -v pacman &> /dev/null; then
+    echo "Detected Pacman package manager."
+    sudo pacman -Syu --noconfirm # -Syu для sync, refresh, upgrade; --noconfirm для автоматического подтверждения
+    sudo pacman -Rs $(pacman -Qdtq) # cleaner
+    echo "Pacman packages updated."
+fi
+
+# --- 3. Обновление для DNF (Fedora, CentOS/RHEL 8+, AlmaLinux, Rocky Linux) ---
+if command -v dnf &> /dev/null; then
+    echo "Detected DNF package manager."
+    sudo dnf upgrade -y
+
+    sudo dnf autoremove -y
+    sudo dnf clean all
+    echo "DNF packages updated."
+fi
+
+# --- 4. Обновление для Zypper (openSUSE) ---
+if command -v zypper &> /dev/null; then
+    echo "Detected Zypper package manager."
+    sudo zypper refresh
+    sudo zypper update -y
+
+    sudo zypper clean -a # Очистка кэша
+    echo "Zypper packages updated."
+fi
+
+# --- 5. Обновление для Flatpak ---
+if command -v flatpak &> /dev/null; then
+    echo "Detected Flatpak support."
+    flatpak update -y # -y для автоматического подтверждения
+
+    flatpak uninstall --unused # Удаляет неиспользуемые рантаймы и зависимости Flatpak.
+    flatpak repair # Иногда может помочь с проблемами кэша.
+    echo "Flatpak packages updated."
+fi
+
+# --- 6. Обновление для Snap ---
+if command -v snap &> /dev/null; then
+    echo "Detected Snap support."
+    sudo snap refresh
+
+    snap set system refresh.retain=2 # Контролирует, сколько старых версий Snap пакета хранить.
+    echo "Snap packages updated."
+fi
+
+echo "System update finished."
+
+
+
+
+# sudo journalctl --vacuum-time=7d # Очистка старых логов (пример, сохранение за 7 дней)
+# sudo apt-get purge $(dpkg -l 'linux-*' | sed '/^ii/!d; /prereq/d; /rc/d' | grep -v "$(uname -r | sed 's/-generic//')" | awk '{print $2}' | xargs) # Удаление старых ядер (ОЧЕНЬ ОСТОРОЖНО)

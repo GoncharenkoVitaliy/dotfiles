@@ -1,0 +1,37 @@
+#! /bin/bash
+
+# проверяем на наличие аргумента
+# если нет аргумента запрашиваем его
+# аргумент - имя скрипта
+[ $1 ] && nameFile=$1 || read -r -p "Enter name script: " nameFile
+
+# если скрипт существует то открываем скрипт для редактирования
+# иначе создаем директорию для скрипта, скрипт, и similink
+
+# директория для запуска скриптов $PATH
+dir_basic=/home/vitaliy/scripts
+# директория для скрипта (appointment-назначение)
+dir_appointment=$dir_basic/scripts_directory/$nameFile 
+
+cd $dir_basic
+
+# проверка на наличие ссылки на скрипт с таким именем 
+if [ ! -L $nameFile ];then
+    mkdir -p $dir_appointment
+    cd $dir_appointment
+
+    # создаем файл с shebang и даем права на запуск
+    echo "#! /bin/bash" > $nameFile
+    chmod +x $nameFile
+
+    # переходим в базовую директорию и создаем similink на файл
+    cd $dir_basic
+    ln -s $dir_appointment/$nameFile
+    
+    # Открываем файл скрипта
+    vim $nameFile
+else
+    # Открываем файл скрипта
+    vim $nameFile
+fi
+

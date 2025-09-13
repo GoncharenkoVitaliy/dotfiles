@@ -131,6 +131,43 @@ function install_tools() {
     echo ""
 }
 
+function setup_user_scripts() {
+    echo "🔧 Настройка пользовательских скриптов..."
+    
+    # Проверяем, есть ли пользовательские скрипты
+    user_scripts_found=false
+    for script in "$SETTINGS_DIR/scripts"/*; do
+        if [[ -f "$script" && -x "$script" ]]; then
+            filename=$(basename "$script")
+            # Пропускаем системные скрипты dotfiles
+            if [[ "$filename" != "manage-settings.sh" && "$filename" != "sync-dotfiles.sh" && "$filename" != "install-dotfiles.sh" && "$filename" != "manage-user-scripts.sh" ]]; then
+                user_scripts_found=true
+                break
+            fi
+        fi
+    done
+    
+    if [[ "$user_scripts_found" == "true" ]]; then
+        echo "✅ Найдены пользовательские скрипты"
+        echo "💡 После перезапуска терминала будут доступны команды:"
+        
+        for script in "$SETTINGS_DIR/scripts"/*; do
+            if [[ -f "$script" && -x "$script" ]]; then
+                filename=$(basename "$script")
+                if [[ "$filename" != "manage-settings.sh" && "$filename" != "sync-dotfiles.sh" && "$filename" != "install-dotfiles.sh" && "$filename" != "manage-user-scripts.sh" ]]; then
+                    echo "  - $filename"
+                fi
+            fi
+        done
+        
+        echo "🔧 Для управления скриптами используйте:"
+        echo "  manage-user-scripts.sh status  - статус скриптов"
+        echo "  manage-user-scripts.sh list    - список скриптов"
+    else
+        echo "ℹ️  Пользовательские скрипты не найдены"
+    fi
+}
+
 function finish_installation() {
     echo ""
     echo "🎉 Установка завершена!"
@@ -147,6 +184,10 @@ function finish_installation() {
     echo "  dotpush         - быстро сохранить изменения"
     echo "  dotpull         - получить обновления"
     echo ""
+    echo "🚀 Управление скриптами:"
+    echo "  manage-user-scripts.sh status - статус пользовательских скриптов"
+    echo "  manage-user-scripts.sh list   - список доступных скриптов"
+    echo ""
     echo "📚 Документация: $SETTINGS_DIR/README.md"
     echo "🔗 Репозиторий: https://github.com/GoncharenkoVitaliy/dotfiles"
     echo ""
@@ -162,6 +203,7 @@ function main() {
     create_backups
     create_symlinks
     setup_git
+    setup_user_scripts
     install_tools
     finish_installation
 }
