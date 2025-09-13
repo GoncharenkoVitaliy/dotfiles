@@ -52,7 +52,7 @@ set backspace=indent,eol,start whichwrap+=<,>,[,]
     endif
     
     "Посмотреть все доступные схемы открыв редактор и набрав там команду :colorscheme, затем пробел, а затем Tab
-     colorscheme peachpuff "dark
+     colorscheme default
 " }}} 
 " ----- COLOR COMMENTS ----- {{{
     if has("syntax")
