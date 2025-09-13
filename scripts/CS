@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 # проверяем на наличие аргумента
 # если нет аргумента запрашиваем его
@@ -16,7 +16,7 @@ cd $dir_basic
 # проверка на наличие скриптa с таким именем 
 if [ ! -f $nameFile ];then
     # создаем файл с shebang и даем права на запуск
-    echo "#! /bin/bash" > $nameFile
+    echo "#! /usr/bin/env bash" > $nameFile
     chmod +x $nameFile
 
     # Открываем файл скрипта
