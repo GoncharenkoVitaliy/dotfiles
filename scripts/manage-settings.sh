@@ -33,7 +33,7 @@ function create_links() {
         fi
     done
     
-    # Editor configurations
+    # Editor configurations (files)
     for file in "$SETTINGS_DIR/editors"/*; do
         if [ -f "$file" ]; then
             filename=$(basename "$file")
@@ -44,6 +44,20 @@ function create_links() {
             fi
             echo "Создание ссылки: $target -> $file"
             ln -sf "$file" "$target"
+        fi
+    done
+    
+    # Editor configurations (directories)
+    for dir in "$SETTINGS_DIR/editors"/*; do
+        if [ -d "$dir" ]; then
+            dirname=$(basename "$dir")
+            target="$HOME/.$dirname"
+            if [ -e "$target" ] && [ ! -L "$target" ]; then
+                echo "Создание резервной копии директории: $target -> $target.backup_$(date +%Y%m%d_%H%M%S)"
+                mv "$target" "$target.backup_$(date +%Y%m%d_%H%M%S)"
+            fi
+            echo "Создание ссылки на директорию: $target -> $dir"
+            ln -sf "$dir" "$target"
         fi
     done
     
@@ -70,11 +84,19 @@ function backup_settings() {
     
     echo "Создание резервной копии в $BACKUP_DIR..."
     
-    # Copy current dotfiles
+    # Copy current dotfiles (files)
     for file in ~/.bashrc ~/.bash_profile ~/.bash_logout ~/.zshrc ~/.vimrc ~/.gtkrc-2.0 ~/.xinitrc ~/.Xclients ~/.dir_colors; do
         if [ -f "$file" ]; then
             cp "$file" "$BACKUP_DIR/"
-            echo "Скопирован: $(basename $file)"
+            echo "Скопирован файл: $(basename $file)"
+        fi
+    done
+    
+    # Copy current dotfiles (directories)
+    for dir in ~/.vim; do
+        if [ -d "$dir" ] && [ ! -L "$dir" ]; then
+            cp -r "$dir" "$BACKUP_DIR/"
+            echo "Скопирована директория: $(basename $dir)"
         fi
     done
     
@@ -87,16 +109,26 @@ function show_status() {
     
     for dir in shell editors desktop; do
         echo "=== $dir ==="
-        for file in "$SETTINGS_DIR/$dir"/*; do
-            if [ -f "$file" ]; then
-                filename=$(basename "$file")
+        for item in "$SETTINGS_DIR/$dir"/*; do
+            if [ -f "$item" ]; then
+                filename=$(basename "$item")
                 target="$HOME/.$filename"
                 if [ -L "$target" ]; then
-                    echo "✓ .$filename -> символическая ссылка"
+                    echo "✓ .$filename -> символическая ссылка (файл)"
                 elif [ -f "$target" ]; then
                     echo "⚠ .$filename -> обычный файл"
                 else
                     echo "✗ .$filename -> отсутствует"
+                fi
+            elif [ -d "$item" ]; then
+                dirname=$(basename "$item")
+                target="$HOME/.$dirname"
+                if [ -L "$target" ]; then
+                    echo "✓ .$dirname -> символическая ссылка (директория)"
+                elif [ -d "$target" ]; then
+                    echo "⚠ .$dirname -> обычная директория"
+                else
+                    echo "✗ .$dirname -> отсутствует"
                 fi
             fi
         done

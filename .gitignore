@@ -47,3 +47,13 @@ development/*key*
 # Исключить конкретные папки backups с датами
 backups/cleanup_*
 backups/initial_*
+
+# Vim временные файлы
+editors/vim/.netrwhist
+editors/vim/swap/
+editors/vim/undo/
+editors/vim/view/
+editors/vim/session/
+*.swp
+*.swo
+*~

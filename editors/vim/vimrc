@@ -1,0 +1,283 @@
+" шрифт
+" set guifont=Monaco:h18
+
+set clipboard=unnamed
+
+" удобное поведение backspace
+set backspace=indent,eol,start whichwrap+=<,>,[,]
+
+" ----- UTF ----- {{{
+    "кодировка терминала
+    set termencoding=utf-8
+    set encoding=utf-8
+    set fileencodings=utf8,cp1251
+" }}}
+" ----- TYPE FILE ----- {{{
+    "Включите определение типа файла. Vim сможет попытаться определить тип используемого файла.
+    filetype on
+    
+    "Включите плагины и загрузите плагин для обнаруженного типа файла
+    filetype plugin on
+    
+    "Загрузите файл отступа для обнаруженного типа файла
+    filetype indent on
+
+    "Для включения обнаружения типа файла  ??????
+    "filetype detect
+    
+    " Явно устанавливать синтаксис Bash (может быть избыточно с filetype on)
+    "autocmd BufNewFile,BufRead *.sh setlocal syntax=sh
+" }}}
+" ----- TABS ----- {{{
+    set autoindent
+    set smartindent
+    
+    set expandtab       "заменa табов на пробелы
+    set smarttab        "таба в начале строки = shiftwidth
+    set tabstop=4       "количество пробелов в одном табе
+    set softtabstop=4   "количество пробелов в табе при удалении
+    set shiftwidth=4
+    
+    " Выкл черточки на tabs
+    set showtabline=1
+    
+    " в .ру включаем умные отступы после ключевых слов
+    " autocmd BuffRead *.py set smartindent cinwords=if,elif,else,for,while,try,except,finally,def,class
+" }}}
+" ----- COLORS ----- {{{
+    if has("syntax")
+        syntax on "подсветка синтаксиса
+        ":set syn=sh  "BASH
+        set t_Co=256
+    endif
+    
+    "Посмотреть все доступные схемы открыв редактор и набрав там команду :colorscheme, затем пробел, а затем Tab
+     colorscheme peachpuff "dark
+" }}} 
+" ----- COLOR COMMENTS ----- {{{
+    if has("syntax")
+    
+        " --- C-подобные языки ---
+        syntax match ImportantComment    "// !.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        syntax match GreenSection        "// @.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        syntax match BlueSection         "// ?.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        syntax match YellowSection       "// $.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        syntax match DefaultComment  "//[^!@].*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        
+        " --- Настройки для Bash (проверка shebang) ---
+        autocmd BufReadPost * if getline(1) =~ '^#!\/bin\/ba[sh]\|^#!\/usr\/bin\/env ba[sh]' |
+              \ hi clear BashImportantComment | hi clear BashTodoComment | hi clear BashDefaultComment |
+              \ syntax match ImportantComment     "# !.*" containedin=shComment |
+              \ syntax match GreenSection         "# @.*" containedin=shComment |
+              \ syntax match BlueSection          "# ?.*" containedin=shComment |
+              \ syntax match YellowSection        "# $.*" containedin=shComment |
+              \ syntax match DefaultComment       "# [^!@?$].*" containedin=shComment |
+              \ hi link ImportantComment   Error  |
+              \ hi link GreenSection       Green  |
+              \ hi link BlueSection        Blue   |
+              \ hi link YellowSection      Yellow |
+              \ hi link DefaultComment     Comment|
+        
+        " --- Настройки для Python (проверка shebang) ---
+        autocmd BufReadPost * if getline(1) =~ '^#!\/usr\/bin\/env python[23]\?\|^#!\/usr\/bin\/python[23]\?' |
+              \ hi clear PythonImportantComment | hi clear PythonTodoComment | hi clear PythonDefaultComment |
+              \ syntax match ImportantComment   "# !.*" containedin=pythonComment |
+              \ syntax match GreenSection       "# @.*" containedin=pythonComment |
+              \ syntax match BlueSection        "# ?.*" containedin=pythonComment |
+              \ syntax match YellowSection      "# $.*" containedin=pythonComment |
+              \ syntax match DefaultComment     "# [^!@?$].*" containedin=pythonComment |
+              \ hi link ImportantComment    Error  |
+              \ hi link GreenSection        Green  |
+              \ hi link BlueSection         Blue   |
+              \ hi link YellowSection       Yellow |
+              \ hi link DefaultComment      Comment|
+        
+        " --- Определяем цвета ---
+        highlight link ImportantComment  Error
+        highlight link GreenSection      Green
+        highlight link BlueSection       Blue
+        highlight link YellowSection     Yellow
+        highlight link DefaultComment    Comment
+        
+        " --- Определяем именованные цвета ---
+        hi Error guifg=red ctermfg=darkred gui=bold cterm=bold
+        hi Green guifg=green ctermfg=darkgreen gui=bold cterm=bold
+        hi Blue guifg=blue ctermfg=darkblue gui=bold cterm=bold
+        "hi Yellow guifg=yellow ctermfg=darkcyan gui=bold cterm=bold
+        hi Yellow guifg=yellow ctermfg=darkgray gui=bold cterm=bold
+        "hi Yellow guifg=yellow ctermfg=darkmagenta gui=bold cterm=bold
+    endif
+" }}}
+" ----- NO BKP ----- {{{
+    "Не сохраняйте резервные копии файлов
+    set nobackup
+    set noswapfile
+" }}}
+"----- NUMBER LINE ----- {{{
+    set number "нумерация строк
+    set relativenumber "относительная нумерация
+    
+    "Выделите линию курсора под курсором по горизонтали
+    set cursorline
+    "Выделите линию курсора под курсором по вертикали
+    "set cursorcolumn
+    
+    " перенос на другую строку
+    set wrap
+    set linebreak
+    
+    "Не переносите линии. Разрешите длинным линиям простираться до конца линии
+    "set nowrap
+" }}} 
+"----- FIEND ----- {{{
+    "При поиске по файлу постепенно выделяйте соответствующие символы по мере ввода
+    set incsearch
+    
+    "Игнорируйте заглавные буквы во время поиска
+    set ignorecase
+    
+    "Показывать совпадающие слова во время поиска
+    set showmatch
+    
+    "Используйте выделение при выполнении поиска
+    set hlsearch
+" }}}
+"----- AUTO COMPLIT ----- {{{
+    "Включить меню автозаполнения после нажатия кнопки TAB
+    set wildmenu
+    
+    " Заставить wildmenu вести себя аналогично завершению Bash
+    set wildmode=list:longest
+    
+    " Включить функции Omnicomplete " 
+    set omnifunc=syntaxcomplete#Comple
+    " Поддержка языков:
+    :set omnifunc=javascriptcomplete "CompleteJS
+    :set omnifunc=javascriptcomplete "CompleteJS
+    :set omnifunc=htmlcomplete "CompleteTags
+    :set omnifunc=csscomplete "CompleteCSS
+    :set omnifunc=phpcomplete "CompletePHP
+    :set omnifunc=pythoncomplete "Python
+    :set omnifunc=shcomplete "BASH
+    
+    "перед сохранением удалить лишние пробелы
+    autocmd BufWritePre *.py normal m`:%s/\s\+$//e ``
+" }}}
+" ----- FILE NO OPEN ----- {{{
+    " Есть определенные файлы, которые мы бы никогда не захотели редактировать с помощью Vim.
+    " Wildmenu будет игнорировать файлы с этими расширениями.
+    set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
+" }}}
+"----- SOUND ----- {{{
+    " При нажатии неверной клавиши или ошибке в Vim проигрывается специальный звук. Если он вам мешает, его можно отключить:
+    " не пищать
+    set t_vb=
+    set visualbell t_vg=
+    "set noerrorbells
+    " не мигать
+    set novisualbell
+" }}}
+" ----- MOUSE ----- {{{
+    "В большинстве случаев чтобы включить мышку во всех режимах программы достаточно добавить такую строчку:
+    set mouse=a
+    
+    "Спрятать курсор мыши при наборе текста
+    set mousehide
+    
+    "Также можно включить мышку только в визуальном режиме:
+    "set mouse=v
+    
+    "Или вовсе её отключить:
+    "set mouse=
+    
+    "При включённой поддержке мыши, вы все ещё можете копировать текст в системный буфер обмена, для этого просто зажмите клавишу Shift.
+" }}}
+" ----- HISTORY ----- {{{
+    "Начиная же с 7.00 появилась возможность записи истории в служебные файлы по каждому ранее открытому буфферу.
+    "То есть теперь вы можете сменить буффер, закрыть окно, вообще выключить редактор, но открыв заново какой-либо файл, история Ваших изменений восстановится.
+    if version >= 700
+        set history=64
+        set undolevels=128
+        set undodir=~/.vim/undodir/
+        set undofile
+        set undolevels=1000
+        set undoreload=10000
+    endif
+" }}}
+" ----- STATUS LINE ----- {{{
+    "  Вкл status line
+    set ruler
+    
+    " Откл status line
+    " set noruler
+    
+    " Clear status line when vimrc is reloaded.
+    set statusline=
+    
+    " Status line left side.
+    set statusline+=\ %F\ %M\ %Y\ %R
+    
+    " Use a divider to separate the left side from the right side.
+    set statusline+=%=
+    
+    " Status line right side.
+    set statusline+=\ ascii:\ %b\ hex:\ 0x%B\ row:\ %l\ col:\ %c\ percent:\ %p%%
+    
+    " Show the status on the second to last line.
+    set laststatus=2
+    
+    " %F – Отображение полного пути к текущему файлу.
+    " %M – Измененный флаг показывает, является ли файл несохраненным.
+    " %Y – Тип файла в буфере.
+    " %R – Отображает флаг 'Только для чтения'.
+    " %b – Показывает символ ASCII / Unicode под курсором.
+    " 0x%B – Показывает шестнадцатеричный символ под курсором.
+    " %l – Отобразить номер строки.
+    " %c – Отобразить номер столбца.
+    " %p%% – Показывать процентное соотношение курсора от верхней части файла.
+" }}}
+" ----- VIMSCRIPT MARKER ----- {{{
+    " This will enable code folding.
+    " Use the marker method of folding.
+    augroup filetype_vim
+        autocmd!
+        autocmd FileType vim setlocal foldmethod=marker
+    augroup END
+    
+    " More Vimscripts code goes here.
+    
+    " Сворачивание на основе отступов
+    set foldmethod=indent
+    
+    " Сворачивание на основе синтаксиса
+    " set foldmethod=syntax
+    
+    " Сворачивание на основе маркеров
+    " set foldmethod=marker
+    
+    "включить его временно командой :set foldenable.
+    " set foldenable "включить постоянно
+    
+    " Отображать все уровни открытыми по умолчанию
+    " set foldlevel=99
+    " set foldlevel=2
+    
+    " Эта опция определяет, какие типы сворачиваний будут автоматически открыты при открытии файла. Возможные значения:
+    " all: Открывать все сворачивания.
+    " block: Открывать только сворачивания, созданные командами типа zf.
+    " insert: Открывать сворачивания при входе в режим вставки.
+    " search: Открывать сворачивания при поиске внутри свернутого блока.
+    " undo: Восстанавливать состояние сворачивания после команд undo/redo.
+    " cursor: Автоматически открывать сворачивания, содержащие курсор.
+    " level: Открывать сворачивания до уровня, указанного в foldlevel.
+    " Открывать только сворачивания до уровня foldlevel
+    " set foldopen=level
+    " set foldopen=cursor,level
+" }}}
+
+"zo чтобы открыть одну складку под курсором.
+"zc чтобы закрыть сгиб под курсором.
+"zR чтобы открыть все складки.
+"zM чтобы закрыть все складки.
+
+":source ~/.vim/vimrc

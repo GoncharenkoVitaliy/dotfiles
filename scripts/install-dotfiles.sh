@@ -66,10 +66,22 @@ function create_backups() {
         "$HOME/.dir_colors"
     )
     
+    # Список директорий для резервного копирования
+    dirs_to_backup=(
+        "$HOME/.vim"
+    )
+    
     for file in "${files_to_backup[@]}"; do
         if [[ -f "$file" && ! -L "$file" ]]; then
             cp "$file" "$BACKUP_DIR/"
             echo "📋 Скопирован: $(basename "$file")"
+        fi
+    done
+    
+    for dir in "${dirs_to_backup[@]}"; do
+        if [[ -d "$dir" && ! -L "$dir" ]]; then
+            cp -r "$dir" "$BACKUP_DIR/"
+            echo "📁 Скопирована директория: $(basename "$dir")"
         fi
     done
     
