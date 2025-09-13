@@ -1,0 +1,46 @@
+# Исключить чувствительные данные
+*.backup
+*.log
+*.tmp
+*~
+
+# Исключить личные данные
+.ssh/
+.gnupg/
+.password*
+*password*
+*secret*
+*token*
+*key*
+
+# Исключить кэши
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+
+# Исключить резервные копии с временными метками
+backups/*/
+
+# Исключить специфичные для машины файлы
+.DS_Store
+Thumbs.db
+.directory
+
+# Исключить историю
+*history*
+*_history
+
+# Включить только нужные файлы конфигурации
+!shell/
+!editors/
+!desktop/
+!development/
+!applications/
+!scripts/
+
+# Но исключить из них секреты
+shell/*secret*
+shell/*password*
+development/*secret*
+development/*key*
