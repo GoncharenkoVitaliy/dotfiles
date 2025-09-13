@@ -44,3 +44,6 @@ shell/*secret*
 shell/*password*
 development/*secret*
 development/*key*
+# Исключить конкретные папки backups с датами
+backups/cleanup_*
+backups/initial_*
