@@ -92,9 +92,9 @@ dotsync pull
 
 **Основные команды:**
 ```bash
-scripts status      # Проверить статус скриптов
-scripts list        # Показать список скриптов
-scripts test-path   # Проверить доступность в PATH
+scripts status       # Проверить статус скриптов
+scripts list         # Показать список скриптов
+scripts test-path    # Проверить доступность в PATH
 scripts setup-legacy # Создать ссылки в ~/scripts/
 ```
 
@@ -105,9 +105,17 @@ manage-user-scripts.sh [status|list|test-path|setup-legacy|help]
 
 **После перезапуска терминала скрипты доступны глобально:**
 ```bash
-CS              # Создать новый скрипт или просмотреть существующий
-user_add        # Добавить пользователя с правами root
-upgradeSystem   # Обновить систему
+# Создать новый скрипт или просмотреть существующий
+CS
+
+# Добавить пользователя с правами root
+user_add
+
+# Удалить пользователя
+user_del
+
+# Обновить систему
+upgradeSystem
 ```
 
 ## Резервные копии
