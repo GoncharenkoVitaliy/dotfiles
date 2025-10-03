@@ -24,9 +24,34 @@ fi
 # --- 2. Обновление для Pacman (Arch, Manjaro, EndeavourOS) ---
 if command -v pacman &> /dev/null; then
     echo "Detected Pacman package manager."
-    sudo pacman -Syu --noconfirm # -Syu для sync, refresh, upgrade; --noconfirm для автоматического подтверждения
-    sudo pacman -Rs $(pacman -Qdtq) # cleaner
-    echo "Pacman packages updated."
+    
+    # Сначала обновляем базы данных
+    echo "Updating package databases..."
+    if sudo pacman -Sy --noconfirm; then
+        echo "Package databases updated successfully."
+        
+        # Затем обновляем пакеты
+        echo "Upgrading packages..."
+        if sudo pacman -Su --noconfirm; then
+            echo "Packages upgraded successfully."
+        else
+            echo "Warning: Some packages failed to upgrade."
+        fi
+        
+        # Очистка (осторожно с автоматическим удалением)
+        echo "Cleaning up orphaned packages..."
+        orphans=$(pacman -Qdtq 2>/dev/null)
+        if [ -n "$orphans" ]; then
+            echo "Found orphaned packages: $orphans"
+            sudo pacman -Rs $orphans --noconfirm
+        else
+            echo "No orphaned packages found."
+        fi
+    else
+        echo "Error: Failed to update package databases. Skipping package upgrade."
+    fi
+    
+    echo "Pacman section completed."
 fi
 
 # --- 3. Обновление для DNF (Fedora, CentOS/RHEL 8+, AlmaLinux, Rocky Linux) ---

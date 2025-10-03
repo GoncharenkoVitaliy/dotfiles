@@ -1,4 +1,4 @@
-# ~/.bashrc: executed by bash(1) for non-login shells.
+
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
@@ -128,3 +128,6 @@ export PATH="$HOME/settings/scripts:$PATH"
 
 # User scripts management alias
 alias scripts="~/settings/scripts/manage-user-scripts.sh"
+
+#прозрачность терминала в kde
+xprop -f _KDE_NET_WM_BLUR_BEHIND_REGION 32c -set _KDE_NET_WM_BLUR_BEHIND_REGION 0 -id `qdbus "org.kde.konsole-$PPID"/konsole/MainWindow_1 winId`
