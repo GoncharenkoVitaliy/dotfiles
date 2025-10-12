@@ -1,10 +1,11 @@
 " шрифт
-" set guifont=Monaco:h18
+set guifont=Monaco:h18
 
 set clipboard=unnamed
 
 " удобное поведение backspace
 set backspace=indent,eol,start whichwrap+=<,>,[,]
+
 
 " ----- UTF ----- {{{
     "кодировка терминала
@@ -43,70 +44,6 @@ set backspace=indent,eol,start whichwrap+=<,>,[,]
     
     " в .ру включаем умные отступы после ключевых слов
     " autocmd BuffRead *.py set smartindent cinwords=if,elif,else,for,while,try,except,finally,def,class
-" }}}
-" ----- COLORS ----- {{{
-    if has("syntax")
-        syntax on "подсветка синтаксиса
-        ":set syn=sh  "BASH
-        set t_Co=256
-    endif
-    
-    "Посмотреть все доступные схемы открыв редактор и набрав там команду :colorscheme, затем пробел, а затем Tab
-     colorscheme default
-" }}} 
-" ----- COLOR COMMENTS ----- {{{
-    if has("syntax")
-    
-        " --- C-подобные языки ---
-        syntax match ImportantComment    "// !.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
-        syntax match GreenSection        "// @.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
-        syntax match BlueSection         "// ?.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
-        syntax match YellowSection       "// $.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
-        syntax match DefaultComment  "//[^!@].*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
-        
-        " --- Настройки для Bash (проверка shebang) ---
-        autocmd BufReadPost * if getline(1) =~ '^#!\/bin\/ba[sh]\|^#!\/usr\/bin\/env ba[sh]' |
-              \ hi clear BashImportantComment | hi clear BashTodoComment | hi clear BashDefaultComment |
-              \ syntax match ImportantComment     "# !.*" containedin=shComment |
-              \ syntax match GreenSection         "# @.*" containedin=shComment |
-              \ syntax match BlueSection          "# ?.*" containedin=shComment |
-              \ syntax match YellowSection        "# $.*" containedin=shComment |
-              \ syntax match DefaultComment       "# [^!@?$].*" containedin=shComment |
-              \ hi link ImportantComment   Error  |
-              \ hi link GreenSection       Green  |
-              \ hi link BlueSection        Blue   |
-              \ hi link YellowSection      Yellow |
-              \ hi link DefaultComment     Comment|
-        
-        " --- Настройки для Python (проверка shebang) ---
-        autocmd BufReadPost * if getline(1) =~ '^#!\/usr\/bin\/env python[23]\?\|^#!\/usr\/bin\/python[23]\?' |
-              \ hi clear PythonImportantComment | hi clear PythonTodoComment | hi clear PythonDefaultComment |
-              \ syntax match ImportantComment   "# !.*" containedin=pythonComment |
-              \ syntax match GreenSection       "# @.*" containedin=pythonComment |
-              \ syntax match BlueSection        "# ?.*" containedin=pythonComment |
-              \ syntax match YellowSection      "# $.*" containedin=pythonComment |
-              \ syntax match DefaultComment     "# [^!@?$].*" containedin=pythonComment |
-              \ hi link ImportantComment    Error  |
-              \ hi link GreenSection        Green  |
-              \ hi link BlueSection         Blue   |
-              \ hi link YellowSection       Yellow |
-              \ hi link DefaultComment      Comment|
-        
-        " --- Определяем цвета ---
-        highlight link ImportantComment  Error
-        highlight link GreenSection      Green
-        highlight link BlueSection       Blue
-        highlight link YellowSection     Yellow
-        highlight link DefaultComment    Comment
-        
-        " --- Определяем именованные цвета ---
-        hi Error guifg=red ctermfg=darkred gui=bold cterm=bold
-        hi Green guifg=green ctermfg=darkgreen gui=bold cterm=bold
-        hi Blue guifg=blue ctermfg=darkblue gui=bold cterm=bold
-        "hi Yellow guifg=yellow ctermfg=darkcyan gui=bold cterm=bold
-        hi Yellow guifg=yellow ctermfg=darkgray gui=bold cterm=bold
-        "hi Yellow guifg=yellow ctermfg=darkmagenta gui=bold cterm=bold
-    endif
 " }}}
 " ----- NO BKP ----- {{{
     "Не сохраняйте резервные копии файлов
@@ -274,10 +211,99 @@ set backspace=indent,eol,start whichwrap+=<,>,[,]
     " set foldopen=level
     " set foldopen=cursor,level
 " }}}
+" ----- CLIPBOARD ----- {{{
+":echo has('clipboard') - поддержка системного буфера обмена: 1-true; 0-false
+":version               - то же, найти +clipboard (да) или -clipboard (нет)
+"vim --version          - то же, в терминале
+
+"       - Копировать в системный буфер: "+y (в visual mode)
+"       - Вставить из системного буфера: "+p
+"       - Или использовать PRIMARY selection: "*y и "*p
+" }}}
+" ----- COLORS ----- {{{
+    syntax on "подсветка синтаксиса
+    " set t_Co=256
+
+    " Включить True Color для современных терминалов
+    if exists('+termguicolors')
+        set termguicolors
+    endif
+
+    " Функция для включения прозрачности
+    function! TransparentBackground()
+        highlight Normal guibg=NONE ctermbg=NONE
+        highlight NonText guibg=NONE ctermbg=NONE
+        highlight SignColumn guibg=NONE ctermbg=NONE
+        highlight LineNr guibg=NONE ctermbg=NONE
+        highlight CursorLineNr guibg=NONE ctermbg=NONE
+        highlight EndOfBuffer guibg=NONE ctermbg=NONE
+    endfunction
+
+    " Применяем после загрузки любой темы
+    autocmd ColorScheme * call TransparentBackground()
+
+    "Посмотреть все доступные схемы открыв редактор и набрав там команду :colorscheme, затем пробел, а затем Tab
+    colorscheme murphy    
+" }}}
+" ----- COLOR COMMENTS ----- {{{
+    if has("syntax")
+    
+        " --- C-подобные языки ---
+        syntax match ImportantComment    "// !.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        syntax match GreenSection        "// @.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        syntax match BlueSection         "// ?.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        syntax match YellowSection       "// $.*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        syntax match DefaultComment  "//[^!@].*" containedin=cComment,cppComment,javaComment,javascriptComment,typescriptComment,cssComment
+        
+        " --- Настройки для Bash (проверка shebang) ---
+        autocmd BufReadPost * if getline(1) =~ '^#!\/bin\/ba[sh]\|^#!\/usr\/bin\/env ba[sh]' |
+              \ hi clear BashImportantComment | hi clear BashTodoComment | hi clear BashDefaultComment |
+              \ syntax match ImportantComment     "# !.*" containedin=shComment |
+              \ syntax match GreenSection         "# @.*" containedin=shComment |
+              \ syntax match BlueSection          "# ?.*" containedin=shComment |
+              \ syntax match YellowSection        "# $.*" containedin=shComment |
+              \ syntax match DefaultComment       "# [^!@?$].*" containedin=shComment |
+              \ hi link ImportantComment   Error  |
+              \ hi link GreenSection       Green  |
+              \ hi link BlueSection        Blue   |
+              \ hi link YellowSection      Yellow |
+              \ hi link DefaultComment     Comment|
+        
+        " --- Настройки для Python (проверка shebang) ---
+        autocmd BufReadPost * if getline(1) =~ '^#!\/usr\/bin\/env python[23]\?\|^#!\/usr\/bin\/python[23]\?' |
+              \ hi clear PythonImportantComment | hi clear PythonTodoComment | hi clear PythonDefaultComment |
+              \ syntax match ImportantComment   "# !.*" containedin=pythonComment |
+              \ syntax match GreenSection       "# @.*" containedin=pythonComment |
+              \ syntax match BlueSection        "# ?.*" containedin=pythonComment |
+              \ syntax match YellowSection      "# $.*" containedin=pythonComment |
+              \ syntax match DefaultComment     "# [^!@?$].*" containedin=pythonComment |
+              \ hi link ImportantComment    Error  |
+              \ hi link GreenSection        Green  |
+              \ hi link BlueSection         Blue   |
+              \ hi link YellowSection       Yellow |
+              \ hi link DefaultComment      Comment|
+        
+        " --- Определяем цвета ---
+        highlight link ImportantComment  Error
+        highlight link GreenSection      Green
+        highlight link BlueSection       Blue
+        highlight link YellowSection     Yellow
+        highlight link DefaultComment    Comment
+        
+        " --- Определяем именованные цвета ---
+        hi Error guifg=red ctermfg=darkred gui=bold cterm=bold
+        hi Green guifg=green ctermfg=darkgreen gui=bold cterm=bold
+        hi Blue guifg=blue ctermfg=darkblue gui=bold cterm=bold
+        "hi Yellow guifg=yellow ctermfg=darkcyan gui=bold cterm=bold
+        hi Yellow guifg=yellow ctermfg=darkgray gui=bold cterm=bold
+        "hi Yellow guifg=yellow ctermfg=darkmagenta gui=bold cterm=bold
+    endif
+" }}}
 
 "zo чтобы открыть одну складку под курсором.
 "zc чтобы закрыть сгиб под курсором.
 "zR чтобы открыть все складки.
 "zM чтобы закрыть все складки.
 
-":source ~/.vim/vimrc
+":source ~/.vim/vimrc   - перезапустить файл конфигурации
+
