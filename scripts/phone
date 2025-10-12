@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# phone — mount Android phone (MTP) via GVFS and expose a stable path at ~/phone
+# Description: Mounts the first detected MTP device using gio/GVFS, creates a
+# stable symlink at $HOME/phone for easy CLI access, and prints the final path.
+# Works well alongside KDE Dolphin (KIO). If Dolphin holds the device, the
+# script will try to close it to free the MTP handle.
+
+set -euo pipefail
+
+MOUNT_ROOT="/run/user/$(id -u)/gvfs"
+SYMLINK_TARGET="$HOME/phone"
+
+log() { echo -e "$*"; }
+
+errexit() { echo "✗ $*" >&2; exit 1; }
+
+# 1) Optionally close Dolphin if it holds the MTP handle (safe no-op if not running)
+if pgrep -x dolphin >/dev/null 2>&1; then
+  log "ℹ️  Закрываю Dolphin, чтобы освободить доступ к MTP..."
+  killall -q dolphin || true
+  sleep 1
+fi
+
+# 2) Ensure GVFS is available
+if ! command -v gio >/dev/null 2>&1; then
+  errexit "gio не найден. Установите GVFS: sudo pacman -S gvfs gvfs-mtp"
+fi
+
+# 3) Try to discover MTP activation URI from gio
+activation_uri=$(gio mount -li | awk -F 'activation_root=' '/mtp:\/\// {print $2}' | sed 's/\r//; s/\s*$//' | head -n1)
+
+if [[ -z "${activation_uri:-}" ]]; then
+  log "ℹ️  MTP-устройство не обнаружено в gio. Проверю повторно после инициализации..."
+  # Nudge gvfs; sometimes listing volumes triggers detection
+  gio mount -li >/dev/null 2>&1 || true
+  activation_uri=$(gio mount -li | awk -F 'activation_root=' '/mtp:\/\// {print $2}' | sed 's/\r//; s/\s*$//' | head -n1)
+fi
+
+if [[ -z "${activation_uri:-}" ]]; then
+  errexit "MTP-устройства не найдены. Проверьте: кабель USB, режим 'Передача файлов (MTP)', телефон разблокирован."
+fi
+
+log "🔌 Обнаружено устройство: $activation_uri"
+
+# 4) Try to mount via gio (idempotent)
+if ! gio mount "$activation_uri" >/dev/null 2>&1; then
+  log "ℹ️  Не удалось смонтировать напрямую, попробую ещё раз..."
+  sleep 1
+  gio mount "$activation_uri" || true
+fi
+
+# 5) Resolve mounted path under GVFS
+# Example: /run/user/1000/gvfs/mtp:host=Xiaomi_Redmi_10C_XXXXXXXX/
+phone_path=$(find "$MOUNT_ROOT" -maxdepth 1 -type d -name 'mtp:host=*' 2>/dev/null | head -n1)
+
+if [[ -z "${phone_path:-}" ]]; then
+  # Sometimes appears with a slight delay
+  sleep 1
+  phone_path=$(find "$MOUNT_ROOT" -maxdepth 1 -type d -name 'mtp:host=*' 2>/dev/null | head -n1)
+fi
+
+if [[ -z "${phone_path:-}" ]]; then
+  errexit "Не удалось получить путь монтирования в $MOUNT_ROOT."
+fi
+
+# 6) Create/update a stable symlink in home
+ln -sfn "$phone_path" "$SYMLINK_TARGET"
+
+log "✓ Телефон примонтирован: $phone_path"
+log "✓ Быстрый доступ: $SYMLINK_TARGET"
+
+# 7) Optionally list top-level contents for quick feedback
+if [[ -d "$phone_path" ]]; then
+  ls -lh "$phone_path" | sed 's/^/  /'
+fi

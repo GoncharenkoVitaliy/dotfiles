@@ -126,6 +126,9 @@ alias dotpull="~/settings/scripts/sync-dotfiles.sh pull"
 # Add settings scripts to PATH
 export PATH="$HOME/settings/scripts:$PATH"
 
+# Phone helpers
+alias sync-music='rsync -avh --progress ~/Music/ ~/phone/Internal\ storage/Music/'
+
 # User scripts management alias
 alias scripts="~/settings/scripts/manage-user-scripts.sh"
 
