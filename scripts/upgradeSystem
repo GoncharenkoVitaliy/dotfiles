@@ -1,10 +1,43 @@
 #! /usr/bin/env bash
 
-echo "Starting system update..."
+# Цветовые коды (если терминал поддерживает)
+if [[ -t 1 ]]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    MAGENTA='\033[0;35m'
+    CYAN='\033[0;36m'
+    
+    # Жирные версии цветов
+    BOLD_RED='\033[1;31m'
+    BOLD_GREEN='\033[1;32m'
+    BOLD_YELLOW='\033[1;33m'
+    BOLD_BLUE='\033[1;34m'
+    BOLD_CYAN='\033[1;36m'
+    BOLD_MAGENTA='\033[1;35m'
+    
+    RESET='\033[0m'
+else
+    RED='' GREEN='' YELLOW='' BLUE='' MAGENTA='' CYAN=''
+    BOLD_RED='' BOLD_GREEN='' BOLD_YELLOW='' BOLD_BLUE='' BOLD_CYAN=''
+    RESET=''
+fi
+
+# Функции для вывода
+header() { echo -e "${BOLD_MAGENTA}$*${RESET}"; }
+section() { echo -e "${BOLD_BLUE}$*${RESET}"; }
+info() { echo -e "${GREEN}$*${RESET}"; }
+warn() { echo -e "${YELLOW}$*${RESET}"; }
+error() { echo -e "${BOLD_RED}$*${RESET}"; }
+
+#=========================================================
+
+header "  Starting system update..."
 
 # --- 1. Обновление для APT (Debian, Ubuntu, Pop!_OS, Mint) ---
 if command -v apt &> /dev/null; then
-    echo "Detected APT package manager."
+    section "  Detected APT package manager."
     sudo apt update
     sudo apt upgrade -y 
     sudo apt full-upgrade -y # -y для автоматического подтверждения
@@ -12,88 +45,92 @@ if command -v apt &> /dev/null; then
     sudo apt autoremove -y
     sudo apt autoclean 
     sudo apt clean
-    echo "APT packages updated."
+    info "  APT packages updated."
 elif command -v apt-get &> /dev/null; then # Fallback для старых систем или если 'apt' не установлен
-    echo "Detected apt-get package manager."
+    section "  Detected apt-get package manager."
     sudo apt-get update
     sudo apt-get dist-upgrade -y # dist-upgrade аналогичен full-upgrade для apt-get
     sudo apt-get autoremove -y
-    echo "apt-get packages updated."
+    info "  apt-get packages updated."
 fi
 
 # --- 2. Обновление для Pacman (Arch, Manjaro, EndeavourOS) ---
 if command -v pacman &> /dev/null; then
-    echo "Detected Pacman package manager."
+    section "  Detected Pacman package manager."
     
-    # Сначала обновляем базы данных
-    echo "Updating package databases..."
-    if sudo pacman -Sy --noconfirm; then
-        echo "Package databases updated successfully."
-        
-        # Затем обновляем пакеты
-        echo "Upgrading packages..."
-        if sudo pacman -Su --noconfirm; then
-            echo "Packages upgraded successfully."
-        else
-            echo "Warning: Some packages failed to upgrade."
-        fi
-        
-        # Очистка (осторожно с автоматическим удалением)
-        echo "Cleaning up orphaned packages..."
-        orphans=$(pacman -Qdtq 2>/dev/null)
-        if [ -n "$orphans" ]; then
-            echo "Found orphaned packages: $orphans"
-            sudo pacman -Rs $orphans --noconfirm
-        else
-            echo "No orphaned packages found."
-        fi
+    # Проверяем наличие pamac для более удобного обновления
+    if command -v pamac &> /dev/null; then
+        info "  Using pamac for update (includes AUR)..."
+        pamac update --no-confirm --aur
+    # Если есть yay - используем его
+    elif command -v yay &> /dev/null; then
+        info "  Using yay for update (includes AUR)..."
+        yay -Syu --noconfirm
+    # Fallback на чистый pacman
     else
-        echo "Error: Failed to update package databases. Skipping package upgrade."
+        info "  Using pacman for update..."
+        sudo pacman -Syu --noconfirm
     fi
     
-    echo "Pacman section completed."
+    # Очистка
+    info "  Cleaning up orphaned packages..."
+    orphans=$(pacman -Qdtq 2>/dev/null)
+    if [ -n "$orphans" ]; then
+        info "  Found orphaned packages: $orphans"
+        sudo pacman -Rs $orphans --noconfirm
+    else
+        info "  No orphaned packages found."
+    fi
+    
+    info "  Pacman section completed."
 fi
 
 # --- 3. Обновление для DNF (Fedora, CentOS/RHEL 8+, AlmaLinux, Rocky Linux) ---
 if command -v dnf &> /dev/null; then
-    echo "Detected DNF package manager."
+    section "  Detected DNF package manager."
     sudo dnf upgrade -y
 
     sudo dnf autoremove -y
     sudo dnf clean all
-    echo "DNF packages updated."
+    info "  DNF packages updated."
 fi
 
 # --- 4. Обновление для Zypper (openSUSE) ---
 if command -v zypper &> /dev/null; then
-    echo "Detected Zypper package manager."
+    section "  Detected Zypper package manager."
     sudo zypper refresh
     sudo zypper update -y
 
     sudo zypper clean -a # Очистка кэша
-    echo "Zypper packages updated."
+    info "  Zypper packages updated."
 fi
 
 # --- 5. Обновление для Flatpak ---
 if command -v flatpak &> /dev/null; then
-    echo "Detected Flatpak support."
-    flatpak update -y # -y для автоматического подтверждения
-
-    flatpak uninstall --unused # Удаляет неиспользуемые рантаймы и зависимости Flatpak.
-    flatpak repair # Иногда может помочь с проблемами кэша.
-    echo "Flatpak packages updated."
+    section "  Detected Flatpak support."
+    # Обновление пользовательских пакетов (не требует sudo)
+    flatpak update --user -y
+    # Обновление системных пакетов (требует sudo)
+    sudo flatpak update -y
+    # Удаление неиспользуемых (пользовательских)
+    flatpak uninstall --user --unused -y
+    # Удаление неиспользуемых (системных)
+    sudo flatpak uninstall --unused -y
+    # Ремонт (может потребоваться sudo для системных)
+    sudo flatpak repair
+    info "  Flatpak packages updated."
 fi
 
 # --- 6. Обновление для Snap ---
 if command -v snap &> /dev/null; then
-    echo "Detected Snap support."
+    section "  Detected Snap support."
     sudo snap refresh
 
     snap set system refresh.retain=2 # Контролирует, сколько старых версий Snap пакета хранить.
-    echo "Snap packages updated."
+    info "  Snap packages updated."
 fi
 
-echo "System update finished."
+header "  System update finished."
 
 
 
