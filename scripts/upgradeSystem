@@ -1,139 +1,219 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
+# upgradeSystem.sh — universal system updater (host or VM)
+# Supports: APT, Pacman, DNF, Zypper, Flatpak, Snap, Timeshift (any distro)
+# + cache cleanup + disk usage report
 
-# Цветовые коды (если терминал поддерживает)
 if [[ -t 1 ]]; then
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    BLUE='\033[0;34m'
-    MAGENTA='\033[0;35m'
-    CYAN='\033[0;36m'
-    
-    # Жирные версии цветов
-    BOLD_RED='\033[1;31m'
-    BOLD_GREEN='\033[1;32m'
-    BOLD_YELLOW='\033[1;33m'
-    BOLD_BLUE='\033[1;34m'
-    BOLD_CYAN='\033[1;36m'
-    BOLD_MAGENTA='\033[1;35m'
-    
-    RESET='\033[0m'
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'; MAGENTA='\033[0;35m'; CYAN='\033[0;36m'
+    BOLD='\033[1m'; RESET='\033[0m'
 else
-    RED='' GREEN='' YELLOW='' BLUE='' MAGENTA='' CYAN=''
-    BOLD_RED='' BOLD_GREEN='' BOLD_YELLOW='' BOLD_BLUE='' BOLD_CYAN=''
-    RESET=''
+    RED=''; GREEN=''; YELLOW=''; BLUE=''; MAGENTA=''; CYAN=''; BOLD=''; RESET=''
 fi
 
-# Функции для вывода
-header() { echo -e "${BOLD_MAGENTA}$*${RESET}"; }
-section() { echo -e "${BOLD_BLUE}$*${RESET}"; }
-info() { echo -e "${GREEN}$*${RESET}"; }
-warn() { echo -e "${YELLOW}$*${RESET}"; }
-error() { echo -e "${BOLD_RED}$*${RESET}"; }
+header() { echo -e "${BOLD}${MAGENTA}$*${RESET}"; }
+section() { echo -e "${BOLD}${BLUE}$*${RESET}"; }
+info() { echo -e "${GREEN}✓ $*${RESET}"; }
+warn() { echo -e "${YELLOW}⚠ $*${RESET}"; }
+error() { echo -e "${RED}✗ $*${RESET}"; }
+
+LOG_DIR="$HOME/settings/backups/update_logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/$(date +%Y%m%d_%H%M%S)_upgradeSystem.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
 
 #=========================================================
+# Вспомогательные функции
 
-header "  Starting system update..."
+is_timeshift_available() {
+    command -v timeshift >/dev/null 2>&1 && [[ -f /etc/timeshift/timeshift.json ]]
+}
 
-# --- 1. Обновление для APT (Debian, Ubuntu, Pop!_OS, Mint) ---
-if command -v apt &> /dev/null; then
-    section "  Detected APT package manager."
-    sudo apt update
-    sudo apt upgrade -y 
-    sudo apt full-upgrade -y # -y для автоматического подтверждения
-    sudo dpkg --configure -a 
-    sudo apt autoremove -y
-    sudo apt autoclean 
-    sudo apt clean
-    info "  APT packages updated."
-elif command -v apt-get &> /dev/null; then # Fallback для старых систем или если 'apt' не установлен
-    section "  Detected apt-get package manager."
-    sudo apt-get update
-    sudo apt-get dist-upgrade -y # dist-upgrade аналогичен full-upgrade для apt-get
-    sudo apt-get autoremove -y
-    info "  apt-get packages updated."
-fi
-
-# --- 2. Обновление для Pacman (Arch, Manjaro, EndeavourOS) ---
-if command -v pacman &> /dev/null; then
-    section "  Detected Pacman package manager."
-    
-    # Проверяем наличие pamac для более удобного обновления
-    if command -v pamac &> /dev/null; then
-        info "  Using pamac for update (includes AUR)..."
-        pamac update --no-confirm --aur
-    # Если есть yay - используем его
-    elif command -v yay &> /dev/null; then
-        info "  Using yay for update (includes AUR)..."
-        yay -Syu --noconfirm
-    # Fallback на чистый pacman
-    else
-        info "  Using pacman for update..."
-        sudo pacman -Syu --noconfirm
+backup_system() {
+    if ! is_timeshift_available; then
+        warn "Timeshift not configured — skipping filesystem snapshot."
+        return
     fi
+
+    section "📁 Creating filesystem snapshot via Timeshift..."
+    
+    if ! sudo timeshift --check-config >/dev/null 2>&1; then
+        warn "Timeshift config invalid — skipping snapshot."
+        return
+    fi
+
+    # Keep only 2 latest upgradeSystem snapshots
+    local -a snaps
+    mapfile -t snaps < <(sudo timeshift --list 2>/dev/null | grep 'upgradeSystem pre-update' | awk '{print $3}')
+    if (( ${#snaps[@]} > 2 )); then
+        info "Found ${#snaps[@]} old upgradeSystem snapshots — keeping 2 latest."
+        for ((i=2; i<${#snaps[@]}; i++)); do
+            sudo timeshift --delete --snapshot "${snaps[$i]}" 2>/dev/null || \
+                warn "Failed to delete snapshot ${snaps[$i]}"
+        done
+    fi
+
+    local snap_name="upgradeSystem pre-update $(date '+%F %T')"
+    if sudo timeshift --create --comments "$snap_name" --tags D --scripted; then
+        info "Snapshot created: $snap_name"
+    else
+        warn "Timeshift snapshot failed — continuing update."
+    fi
+}
+
+report_disk_usage() {
+    section "📊 Disk usage report"
+    echo "Mountpoint      Size  Used Avail Use% Path"
+    df -h / /home /tmp /var 2>/dev/null | grep -E '^(/|[[:space:]])' | while IFS= read -r line; do
+        [[ -n "$line" ]] && echo "  $line"
+    done
+
+    echo -e "\n  Key directories:"
+    for dir in /var/log /var/cache /tmp "$HOME/.cache" "$HOME/.local/share/flatpak"; do
+        [[ -d "$dir" ]] && printf "  %-30s %s\n" "$dir:" "$(du -sh "$dir" 2>/dev/null | cut -f1)"
+    done
+}
+
+cleanup_caches() {
+    section "🧹 Cleaning caches & logs"
+
+    # System logs
+    if command -v journalctl &> /dev/null; then
+        sudo journalctl --vacuum-time=14d -q 2>/dev/null || \
+        sudo journalctl --vacuum-size=200M -q 2>/dev/null || true
+    fi
+
+    # Package managers
+    if command -v apt &> /dev/null; then
+        sudo apt clean -qq 2>/dev/null
+        sudo apt autoclean -qq 2>/dev/null
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -Sc --noconfirm 2>/dev/null || true
+    elif command -v dnf &> /dev/null; then
+        sudo dnf clean all -q 2>/dev/null || true
+    elif command -v zypper &> /dev/null; then
+        sudo zypper clean -a -q 2>/dev/null || true
+    fi
+
+    # User cache: files not accessed in 30 days
+    if [[ -d "$HOME/.cache" ]]; then
+        local cleaned
+        cleaned=$(find "$HOME/.cache" -type f -atime +30 -delete -print 2>/dev/null | wc -l)
+        info "Deleted $cleaned old cache files from ~/.cache"
+    fi
+
+    # Flatpak/Snap cleanup
+    if command -v flatpak &> /dev/null; then
+        flatpak uninstall --user --unused -y 2>/dev/null || true
+        sudo flatpak uninstall --unused -y 2>/dev/null || true
+        flatpak repair --user 2>/dev/null || true
+    fi
+    if command -v snap &> /dev/null; then
+        sudo snap set system refresh.retain=2 2>/dev/null || true
+    fi
+}
+
+#=========================================================
+# Основной процесс
+
+header "🚀 Starting system update..."
+
+# 0. Disk report (before)
+report_disk_usage
+
+# 1. Filesystem snapshot (if Timeshift available)
+backup_system
+
+# --- 2. Обновление для APT (Debian, Ubuntu, Pop!_OS, Mint) ---
+if command -v apt-get &> /dev/null; then
+    section "  Detected APT-based system (using apt-get for scripting stability)."
+    
+    # Тихое обновление списка пакетов
+    sudo apt-get update -qq
+    
+    # Обновление установленных пакетов (без вопросов о конфигах)
+    sudo apt-get upgrade -y \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" || true
+    
+    # Полное обновление (учитывает зависимости, как full-upgrade)
+    sudo apt-get dist-upgrade -y \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" || true
+    
+    # Восстановление после частичных обновлений
+    sudo dpkg --configure -a || true
     
     # Очистка
-    info "  Cleaning up orphaned packages..."
-    orphans=$(pacman -Qdtq 2>/dev/null)
-    if [ -n "$orphans" ]; then
-        info "  Found orphaned packages: $orphans"
-        sudo pacman -Rs $orphans --noconfirm
-    else
-        info "  No orphaned packages found."
-    fi
+    sudo apt-get autoremove -y --purge
+    sudo apt-get autoclean -qq
+    sudo apt-get clean -qq
     
-    info "  Pacman section completed."
+    info "  APT packages updated (via apt-get)."
 fi
 
-# --- 3. Обновление для DNF (Fedora, CentOS/RHEL 8+, AlmaLinux, Rocky Linux) ---
+# --- 3. Pacman ---
+if command -v pacman &> /dev/null; then
+    section "📦 Pacman (Arch family)"
+    sudo pacman -Syu --noconfirm || warn "Core update failed."
+
+    # AUR
+    if command -v yay &> /dev/null; then
+        info "→ Updating AUR (yay)..."
+        yay -Sua --devel --timeupdate --noconfirm 2>/dev/null || warn "AUR update failed."
+    elif command -v paru &> /dev/null; then
+        info "→ Updating AUR (paru)..."
+        paru -Sua --devel --timeupdate --noconfirm 2>/dev/null || warn "AUR update failed."
+    fi
+
+    # Orphans
+    local orphans
+    orphans=$(pacman -Qdtq 2>/dev/null)
+    [[ -n "$orphans" ]] && { sudo pacman -Rs $orphans --noconfirm 2>/dev/null && info "Removed orphans: $orphans"; } || :
+    info "Pacman update completed."
+fi
+
+# --- 4. DNF ---
 if command -v dnf &> /dev/null; then
-    section "  Detected DNF package manager."
-    sudo dnf upgrade -y
-
-    sudo dnf autoremove -y
-    sudo dnf clean all
-    info "  DNF packages updated."
+    section "📦 DNF (Fedora/RHEL family)"
+    sudo dnf upgrade -y || true
+    sudo dnf autoremove -y || true
+    info "DNF update completed."
 fi
 
-# --- 4. Обновление для Zypper (openSUSE) ---
+# --- 5. Zypper ---
 if command -v zypper &> /dev/null; then
-    section "  Detected Zypper package manager."
-    sudo zypper refresh
-    sudo zypper update -y
-
-    sudo zypper clean -a # Очистка кэша
-    info "  Zypper packages updated."
+    section "📦 Zypper (openSUSE)"
+    sudo zypper refresh -y || true
+    sudo zypper update -y || true
+    info "Zypper update completed."
 fi
 
-# --- 5. Обновление для Flatpak ---
+# --- 6. Flatpak/Snap (update only; cleanup in cleanup_caches)
+if command -v flatpak &> /dev/false; then :; fi  # already covered
 if command -v flatpak &> /dev/null; then
-    section "  Detected Flatpak support."
-    # Обновление пользовательских пакетов (не требует sudo)
-    flatpak update --user -y
-    # Обновление системных пакетов (требует sudo)
-    sudo flatpak update -y
-    # Удаление неиспользуемых (пользовательских)
-    flatpak uninstall --user --unused -y
-    # Удаление неиспользуемых (системных)
-    sudo flatpak uninstall --unused -y
-    # Ремонт (может потребоваться sudo для системных)
-    sudo flatpak repair
-    info "  Flatpak packages updated."
+    section "📦 Flatpak"
+    flatpak update --user -y 2>/dev/null || true
+    sudo flatpak update -y 2>/dev/null || true
+    info "Flatpak update completed."
 fi
-
-# --- 6. Обновление для Snap ---
 if command -v snap &> /dev/null; then
-    section "  Detected Snap support."
-    sudo snap refresh
-
-    snap set system refresh.retain=2 # Контролирует, сколько старых версий Snap пакета хранить.
-    info "  Snap packages updated."
+    section "📦 Snap"
+    sudo snap refresh 2>/dev/null || true
+    info "Snap update completed."
 fi
 
-header "  System update finished."
+# --- 7. Final cleanup ---
+cleanup_caches
 
+# 8. Disk report (after)
+report_disk_usage
+
+header "✅ System update & cleanup finished. Log: $LOG_FILE"
 
 
 
 # sudo journalctl --vacuum-time=7d # Очистка старых логов (пример, сохранение за 7 дней)
 # sudo apt-get purge $(dpkg -l 'linux-*' | sed '/^ii/!d; /prereq/d; /rc/d' | grep -v "$(uname -r | sed 's/-generic//')" | awk '{print $2}' | xargs) # Удаление старых ядер (ОЧЕНЬ ОСТОРОЖНО)
+
+
