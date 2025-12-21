@@ -4,6 +4,9 @@
 
 SETTINGS_DIR="$HOME/settings"
 
+# Определяем, как был вызван скрипт
+SCRIPT_NAME="$(basename "$0")"
+
 function sync_dotfiles() {
     cd "$SETTINGS_DIR" || {
         echo "❌ Ошибка: не могу найти папку settings"
@@ -77,6 +80,18 @@ function pull_updates() {
     echo "🔗 Обновляю символические ссылки..."
     ~/settings/scripts/manage-settings.sh link
 }
+
+# Если вызван как dotpush, выполняем sync
+if [[ "$SCRIPT_NAME" == "dotpush" ]]; then
+    sync_dotfiles "$@"
+    exit 0
+fi
+
+# Если вызван как dotpull, выполняем pull
+if [[ "$SCRIPT_NAME" == "dotpull" ]]; then
+    pull_updates
+    exit 0
+fi
 
 case "$1" in
     sync|push|save)
