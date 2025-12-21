@@ -134,3 +134,7 @@ alias scripts="~/settings/scripts/manage-user-scripts.sh"
 
 #прозрачность терминала в kde
 xprop -f _KDE_NET_WM_BLUR_BEHIND_REGION 32c -set _KDE_NET_WM_BLUR_BEHIND_REGION 0 -id `qdbus "org.kde.konsole-$PPID"/konsole/MainWindow_1 winId`
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion

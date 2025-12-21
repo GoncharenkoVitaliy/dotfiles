@@ -30,34 +30,39 @@ is_timeshift_available() {
 }
 
 backup_system() {
-    if ! is_timeshift_available; then
-        warn "Timeshift not configured — skipping filesystem snapshot."
-        return
-    fi
-
     section "📁 Creating filesystem snapshot via Timeshift..."
-    
-    if ! sudo timeshift --check-config >/dev/null 2>&1; then
-        warn "Timeshift config invalid — skipping snapshot."
+
+    # 1. Проверка: установлен ли timeshift
+    if ! command -v timeshift >/dev/null 2>&1; then
+        warn "Timeshift is not installed — skipping snapshot."
         return
     fi
 
-    # Keep only 2 latest upgradeSystem snapshots
-    local -a snaps
-    mapfile -t snaps < <(sudo timeshift --list 2>/dev/null | grep 'upgradeSystem pre-update' | awk '{print $3}')
-    if (( ${#snaps[@]} > 2 )); then
-        info "Found ${#snaps[@]} old upgradeSystem snapshots — keeping 2 latest."
-        for ((i=2; i<${#snaps[@]}; i++)); do
-            sudo timeshift --delete --snapshot "${snaps[$i]}" 2>/dev/null || \
-                warn "Failed to delete snapshot ${snaps[$i]}"
-        done
+    # 2. Опциональная проверка конфига (только с jq)
+    local config="/etc/timeshift/timeshift.json"
+    if command -v jq >/dev/null 2>&1; then
+        if [[ -f "$config" ]] && [[ -s "$config" ]] && jq empty "$config" >/dev/null 2>&1; then
+            local device
+            device=$(jq -r '.backup_device // empty' "$config" 2>/dev/null)
+            if [[ -n "$device" ]] && [[ "$device" != "null" ]]; then
+                info "✅ Timeshift config: backup device = $device"
+            else
+                info "ⓘ Timeshift config: no external backup device (local snapshots only)"
+            fi
+        else
+            info "ⓘ Timeshift config not found or invalid — using defaults."
+        fi
+    else
+        info "ⓘ jq not installed — skipping config validation."
     fi
 
-    local snap_name="upgradeSystem pre-update $(date '+%F %T')"
-    if sudo timeshift --create --comments "$snap_name" --tags D --scripted; then
-        info "Snapshot created: $snap_name"
+    # 3. 🔥 Создаём снапшот ВСЕГДА перед обновлением (даже если расписание выключено)
+    info "→ Creating manual snapshot (pre-update)..."
+    if sudo timeshift --create --tags O --comments "Pre-update snapshot @ $(date '+%Y-%m-%d %H:%M')" --scripted; then
+        success "✅ Snapshot created successfully."
     else
-        warn "Timeshift snapshot failed — continuing update."
+        warn "❌ Failed to create snapshot. System update will continue without backup."
+        # Не прерываем — продолжаем обновление (на ваше усмотрение)
     fi
 }
 
@@ -88,7 +93,7 @@ cleanup_caches() {
         sudo apt clean -qq 2>/dev/null
         sudo apt autoclean -qq 2>/dev/null
     elif command -v pacman &> /dev/null; then
-        sudo pacman -Sc --noconfirm 2>/dev/null || true
+        sudo pacman -Scc --noconfirm 2>/dev/null || true
     elif command -v dnf &> /dev/null; then
         sudo dnf clean all -q 2>/dev/null || true
     elif command -v zypper &> /dev/null; then
@@ -167,9 +172,10 @@ if command -v pacman &> /dev/null; then
     fi
 
     # Orphans
-    local orphans
     orphans=$(pacman -Qdtq 2>/dev/null)
-    [[ -n "$orphans" ]] && { sudo pacman -Rs $orphans --noconfirm 2>/dev/null && info "Removed orphans: $orphans"; } || :
+    if [[ -n "$orphans" ]]; then
+        sudo pacman -Rs $orphans --noconfirm 2>/dev/null && info "Removed orphans: $orphans"
+    fi
     info "Pacman update completed."
 fi
 
@@ -190,7 +196,7 @@ if command -v zypper &> /dev/null; then
 fi
 
 # --- 6. Flatpak/Snap (update only; cleanup in cleanup_caches)
-if command -v flatpak &> /dev/false; then :; fi  # already covered
+if command -v flatpak &> /dev/null; then :; fi  # already covered
 if command -v flatpak &> /dev/null; then
     section "📦 Flatpak"
     flatpak update --user -y 2>/dev/null || true
@@ -216,4 +222,13 @@ header "✅ System update & cleanup finished. Log: $LOG_FILE"
 # sudo journalctl --vacuum-time=7d # Очистка старых логов (пример, сохранение за 7 дней)
 # sudo apt-get purge $(dpkg -l 'linux-*' | sed '/^ii/!d; /prereq/d; /rc/d' | grep -v "$(uname -r | sed 's/-generic//')" | awk '{print $2}' | xargs) # Удаление старых ядер (ОЧЕНЬ ОСТОРОЖНО)
 
+# Настройка zram и отключение swap
+# RAM_GB=$(free -g | awk '/^Mem:/ {print $2}'); SIZE_PCT=$(( RAM_GB >= 16 ? 50 : 100 )); SWAPPINESS=$(( RAM_GB >= 16 ? 40 : 80 )); sudo apt install -y zram-tools && echo -e "ENABLED=true\nSIZE=${SIZE_PCT}%\nALGO=zstd\nPRIORITY=100" | sudo tee /etc/default/zramswap > /dev/null && echo "vm.swappiness = $SWAPPINESS" | sudo tee -a /etc/sysctl.conf > /dev/null && sudo sysctl -w vm.swappiness=$SWAPPINESS && sudo swapoff -a && sudo sed -i 's/^\([^#].*swap.*\)$/# \1/' /etc/fstab && sudo systemctl restart zramswap
 
+# Однострочник для Manjaro
+# sudo tee /etc/systemd/zram-generator.conf <<'EOF' && sudo systemctl daemon-reload && sudo systemctl start /dev/zram0 && echo 'vm.swappiness=40' | sudo tee -a /etc/sysctl.d/90-zram.conf && sudo sysctl --system
+# [zram0]
+# zram-size = ram / 2
+# compression-algorithm = zstd
+# swap-priority = 100
+# EOF#

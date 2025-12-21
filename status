@@ -1,0 +1,200 @@
+Script started on 2025-12-21 20:30:07+02:00 [TERM="xterm-256color" TTY="/dev/pts/2" COLUMNS="103" LINES="50"]
+bash: qdbus: command not found
+xprop: -id requires an argument
+
+usage:  xprop [-options ...] [[format [dformat]] atom] ...
+
+where options include:
+    -help                          print out a summary of command line options
+    -grammar                       print out full grammar for command line
+    -display host:dpy              the X server to contact
+    -id id                         resource id of window to examine
+    -name name                     name of window to examine
+    -font name                     name of font to examine
+    -remove propname               remove a property
+    -set propname value            set a property to a given value
+    -root                          examine the root window
+    -len n                         display at most n bytes of any property
+    -notype                        do not display the type field
+    -fs filename                   where to look for formats for properties
+    -frame                         don't ignore window manager frames
+    -f propname format [dformat]   formats to use for property of given name
+    -spy                           examine window properties forever
+    -version                       print program version
+
+]0;vitaliy@vitaliy-20250:~/settings[?2004h]0;vitaliy@vitaliy-20250: ~/settings[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ watch -n 3 -d free -h[Kwatch -n 3 -d free -h[14P[C[C[C[C[C[C[C[14@watch -n 3 -d [C[C[C[C[C[C[C[Kscripts status
+[?2004l📊 Статус пользовательских скриптов
+
+✅ Директория скриптов в PATH: /home/vitaliy/settings/scripts
+
+📝 Пользовательские скрипты:
+  ✅ CS - доступен глобально
+  ✅ phone - доступен глобально
+  ✅ upgradeSystem.sh - доступен глобально
+  ✅ user_add - доступен глобально
+  ✅ user_del - доступен глобально
+  ✅ vm-maintain.sh - доступен глобально
+
+🔗 Совместимость со старой структурой:
+  📁 Старая директория не существует: /home/vitaliy/scripts
+]0;vitaliy@vitaliy-20250:~/settings[?2004h]0;vitaliy@vitaliy-20250: ~/settings[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ sc
+scalar             scmp_sys_resolver  scp-dbus-service   scriptlive         
+scanimage          scncopy            screendump         scriptreplay       
+sclient            scp                script             scripts/           
+]0;vitaliy@vitaliy-20250: ~/settings[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ scripts list
+[?2004l📋 Доступные пользовательские скрипты:
+
+🔧 CS
+   ! /usr/bin/env bash
+
+🔧 phone
+   Description: Mounts the first detected MTP device using gio/GVFS, creates a
+
+🔧 upgradeSystem.sh
+   upgradeSystem.sh — universal system updater (host or VM)
+
+🔧 user_add
+   Проверка на запуск от root
+
+🔧 user_del
+   Проверка на наличие аргументов - name_users
+
+🔧 vm-maintain.sh
+   ! /usr/bin/env bash
+
+]0;vitaliy@vitaliy-20250:~/settings[?2004h]0;vitaliy@vitaliy-20250: ~/settings[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ ma[K[Kls -lAh
+[?2004ltotal 44K
+drwxr-xr-x 2 vitaliy vitaliy 4.0K Sep 13 20:32 [0m[01;34mapplications[0m
+drwxr-xr-x 5 vitaliy vitaliy 4.0K Nov 23 22:41 [01;34mbackups[0m
+drwxr-xr-x 2 vitaliy vitaliy 4.0K Sep 13 20:35 [01;34mdesktop[0m
+drwxr-xr-x 2 vitaliy vitaliy 4.0K Sep 13 20:32 [01;34mdevelopment[0m
+drwxr-xr-x 3 vitaliy vitaliy 4.0K Sep 13 22:24 [01;34meditors[0m
+drwxr-xr-x 7 vitaliy vitaliy 4.0K Dec 21 20:26 [01;34m.git[0m
+-rw-r--r-- 1 vitaliy vitaliy 1.1K Sep 13 22:25 .gitignore
+-rw-r--r-- 1 vitaliy vitaliy 7.8K Nov 23 22:34 README.md
+drwxr-xr-x 3 vitaliy vitaliy 4.0K Dec 21 20:25 [01;34mscripts[0m
+drwxr-xr-x 2 vitaliy vitaliy 4.0K Oct  2 20:22 [01;34mshell[0m
+-rw-r--r-- 1 vitaliy vitaliy    0 Dec 21 20:30 status
+]0;vitaliy@vitaliy-20250:~/settings[?2004h]0;vitaliy@vitaliy-20250: ~/settings[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ less status
+[?2004l[?1049h[22;0;0t[50;1H[?1h=Script started on 2025-12-21 20:30:07+02:00 [TERM="xterm-256color" TTY="/dev/pts/2" COLUMNS="103" LINES[m ="50"][m
+bash: qdbus: command not found[m
+xprop: -id requires an argument[m
+[m
+usage:  xprop [-options ...] [[format [dformat]] atom] ...[m
+[m
+where options include:[m
+    -help                          print out a summary of command line options[m
+    -grammar                       print out full grammar for command line[m
+    -display host:dpy              the X server to contact[m
+    -id id                         resource id of window to examine[m
+    -name name                     name of window to examine[m
+    -font name                     name of font to examine[m
+    -remove propname               remove a property[m
+    -set propname value            set a property to a given value[m
+    -root                          examine the root window[m
+    -len n                         display at most n bytes of any property[m
+    -notype                        do not display the type field[m
+    -fs filename                   where to look for formats for properties[m
+    -frame                         don't ignore window manager frames[m
+    -f propname format [dformat]   formats to use for property of given name[m
+    -spy                           examine window properties forever[m
+    -version                       print program version[m
+[m
+[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m[01;47;34m^H^H^H^H^H^H^H^H^H^H^H^H^G^G[0mscripts status[m]8;;\
+[01;47;34m^M[0m📊 Статус пользовательских скриптов[m
+[m
+✅ Директория скриптов в PATH: /home/vitaliy/settings/scripts[m
+[m
+📝 Пользовательские скрипты:[m
+  ✅ CS - доступен глобально[m
+  ✅ phone - доступен глобально[m
+  ✅ upgradeSystem.sh - доступен глобально[m
+  ✅ user_add - доступен глобально[m
+  ✅ user_del - доступен глобально[m
+  ✅ vm-maintain.sh - доступен глобально[m
+[m
+🔗 Совместимость со старой структурой:[m
+  📁 Старая директория не существует: /home/vitaliy/scripts[m
+[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ sc[01;47;34m^G[0m[m]8;;\
+scalar             scmp_sys_resolver  scp-dbus-service   scriptlive         [m
+scanimage          scncopy            screendump         scriptreplay       [m
+sclient            scp                script             scripts/           [m
+[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ scr[01;47;34m^G[0mi[01;47;34m^G[0mpts list[m]8;;\
+[01;47;34m^M[0m📋 Доступные пользовательские скрипты:[m
+[m
+🔧 CS[m
+   ! /usr/bin/env bash[m
+[01;47;34mstatus[0m[K[K[m
+:[K[K🔧 phone[m
+:[K[K   Description: Mounts the first detected MTP device using gio/GVFS, creates a[m
+:[K[K[m
+:[K[K🔧 upgradeSystem.sh[m
+:[K[K   upgradeSystem.sh — universal system updater (host or VM)[m
+:[K[K[m
+:[K[K🔧 user_add[m
+:[K[K   Проверка на запуск от root[m
+:[K[K[m
+:[K[K🔧 user_del[m
+:[K[K   Проверка на наличие аргументов - name_users[m
+:[K[K[m
+:[K[K🔧 vm-maintain.sh[m
+:[K[K   ! /usr/bin/env bash[m
+:[K[K[m
+:[K[K[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ [01;47;34m^G[0mls -lAh[m]8;;\
+:[K[K[01;47;34m^M[0mtotal 44K[m
+:[K[Kdrwxr-xr-x 2 vitaliy vitaliy 4.0K Sep 13 20:32 [0m[01;34mapplications[0m[m
+:[K[Kdrwxr-xr-x 5 vitaliy vitaliy 4.0K Nov 23 22:41 [01;34mbackups[0m[m
+:[K[Kdrwxr-xr-x 2 vitaliy vitaliy 4.0K Sep 13 20:35 [01;34mdesktop[0m[m
+:[K[Kdrwxr-xr-x 2 vitaliy vitaliy 4.0K Sep 13 20:32 [01;34mdevelopment[0m[m
+:[K[Kdrwxr-xr-x 3 vitaliy vitaliy 4.0K Sep 13 22:24 [01;34meditors[0m[m
+:[K[Kdrwxr-xr-x 7 vitaliy vitaliy 4.0K Dec 21 20:26 [01;34m.git[0m[m
+:[K[K-rw-r--r-- 1 vitaliy vitaliy 1.1K Sep 13 22:25 .gitignore[m
+:[K[K-rw-r--r-- 1 vitaliy vitaliy 7.8K Nov 23 22:34 README.md[m
+:[K[Kdrwxr-xr-x 3 vitaliy vitaliy 4.0K Dec 21 20:25 [01;34mscripts[0m[m
+:[K[Kdrwxr-xr-x 2 vitaliy vitaliy 4.0K Oct  2 20:22 [01;34mshell[0m[m
+:[K[K-rw-r--r-- 1 vitaliy vitaliy    0 Dec 21 20:30 status[m
+:[K[K[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ less status[m]8;;\
+:[K[K[01;47;34m^M^M[0mScript started on 2025-12-21 20:30:07+02:00 [TERM="xterm-256color" TTY="/dev/pts/2" COLUMNS="103" L[m :[K[KINES[m="50"][m[m
+:[K[Kbash: qdbus: command not found[m[m
+:[K[Kxprop: -id requires an argument[m[m
+:[K[K[m[m
+:[K[Kusage:  xprop [-options ...] [[format [dformat]] atom] ...[m[m
+:[K[K[m[m
+:[K[Kwhere options include:[m[m
+:[K[K    -help                          print out a summary of command line options[m[m
+:[K[K    -grammar                       print out full grammar for command line[m[m
+:[K[K    -display host:dpy              the X server to contact[m[m
+:[K[K    -id id                         resource id of window to examine[m[m
+:[K[K    -name name                     name of window to examine[m[m
+:[K[K    -font name                     name of font to examine[m[m
+:[K[K    -remove propname               remove a property[m[m
+:[K[K    -set propname value            set a property to a given value[m[m
+:[K[K    -root                          examine the root window[m[m
+:[K[K    -len n                         display at most n bytes of any property[m[m
+:[K[K    -notype                        do not display the type field[m[m
+:[K[K    -fs filename                   where to look for formats for properties[m[m
+:[K[K    -frame                         don't ignore window manager frames[m[m
+:[K[K    -f propname format [dformat]   formats to use for property of given name[m[m
+:[K[K    -spy                           examine window properties forever[m[m
+:[K[K    -version                       print program version[m[m
+:[K[K[m[m
+:[K[K[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m[01;47;34m^H^H^H^H^H^H^H^H^H^H^H^H^G^G[0mscripts status[m]8;;\[m]8;;\
+:[K[K[01;47;34m^M[0m📊 Статус пользовательских скриптов[m[m
+:[K[K[m[m
+:[K[K✅ Директория скриптов в PATH: /home/vitaliy/settings/scripts[m[m
+:[K[K[m[m
+:[K[K📝 Пользовательские скрипты:[m[m
+:[K[K  ✅ CS - доступен глобально[m[m
+:[K[K  ✅ phone - доступен глобально[m[m
+:[K[K  ✅ upgradeSystem.sh - доступен глобально[m[m
+:[K[K  ✅ user_add - доступен глобально[m[m
+:[K[K  ✅ user_del - доступен глобально[m[m
+:[K[K  ✅ vm-maintain.sh - доступен глобально[m[m
+:[K[K[m[m
+:[K[K🔗 Совместимость со старой структурой:[m[m
+:[K[K  📁 Старая директория не существует: /home/vitaliy/scripts[m[m
+:[K[K[01;32mvitaliy@vitaliy-20250[00m:[01;34m~/settings[00m$ sc[01;47;34m^G[0m[m]8;;\[m]8;;\
+:[K[Kscalar             scmp_sys_resolver  scp-dbus-service   scriptlive         [m[m
+:[K[Kscanimage          scncopy            screendump         scriptreplay       [m[m
+:[K[Ksclient            scp                script             scripts/           [m[m
+:[K[K[01;32mvitaliy@vi
