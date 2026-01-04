@@ -84,37 +84,112 @@ cleanup_caches() {
 
     # System logs
     if command -v journalctl &> /dev/null; then
+        info "→ Cleaning systemd journal..."
         sudo journalctl --vacuum-time=14d -q 2>/dev/null || \
         sudo journalctl --vacuum-size=200M -q 2>/dev/null || true
     fi
 
     # Package managers
     if command -v apt &> /dev/null; then
+        info "→ Cleaning APT cache..."
         sudo apt clean -qq 2>/dev/null
         sudo apt autoclean -qq 2>/dev/null
     elif command -v pacman &> /dev/null; then
-        sudo pacman -Scc --noconfirm 2>/dev/null || true
+        info "→ Cleaning Pacman cache (keeping last 3 versions)..."
+        # Оставляем последние 3 версии вместо полного удаления
+        if command -v paccache &> /dev/null; then
+            sudo paccache -r -k 3 2>/dev/null || true
+            sudo paccache -r -u -k 0 2>/dev/null || true  # Удалить все деинсталлированные
+        else
+            sudo pacman -Sc --noconfirm 2>/dev/null || true
+        fi
+        
+        # Очистка AUR helper cache
+        if command -v yay &> /dev/null; then
+            info "→ Cleaning yay cache..."
+            yay -Sc --noconfirm 2>/dev/null || true
+        elif command -v paru &> /dev/null; then
+            info "→ Cleaning paru cache..."
+            paru -Sc --noconfirm 2>/dev/null || true
+        fi
     elif command -v dnf &> /dev/null; then
+        info "→ Cleaning DNF cache..."
         sudo dnf clean all -q 2>/dev/null || true
     elif command -v zypper &> /dev/null; then
+        info "→ Cleaning Zypper cache..."
         sudo zypper clean -a -q 2>/dev/null || true
     fi
 
-    # User cache: files not accessed in 30 days
+    # User cache cleanup
     if [[ -d "$HOME/.cache" ]]; then
+        info "→ Cleaning user cache (~/.cache)..."
+        
+        # Очистка старых файлов (не использовались 30+ дней)
         local cleaned
         cleaned=$(find "$HOME/.cache" -type f -atime +30 -delete -print 2>/dev/null | wc -l)
-        info "Deleted $cleaned old cache files from ~/.cache"
+        [[ $cleaned -gt 0 ]] && info "  Deleted $cleaned old files (30+ days)"
+        
+        # UV cache (Python package manager)
+        if command -v uv &> /dev/null && [[ -d "$HOME/.cache/uv" ]]; then
+            local uv_size_before=$(du -sm "$HOME/.cache/uv" 2>/dev/null | cut -f1)
+            uv cache clean 2>/dev/null || true
+            local uv_size_after=$(du -sm "$HOME/.cache/uv" 2>/dev/null | cut -f1)
+            info "  UV cache: ${uv_size_before}MB → ${uv_size_after}MB"
+        fi
+        
+        # Pip cache
+        if command -v pip &> /dev/null && [[ -d "$HOME/.cache/pip" ]]; then
+            pip cache purge 2>/dev/null || true
+            info "  Pip cache cleared"
+        fi
+        
+        # Chrome/Chromium cache (безопасная очистка старых файлов)
+        for chrome_dir in "$HOME/.cache/google-chrome" "$HOME/.cache/chromium"; do
+            if [[ -d "$chrome_dir" ]]; then
+                find "$chrome_dir" -type f -atime +7 -delete 2>/dev/null || true
+            fi
+        done
+    fi
+
+    # Thumbnail cache
+    if [[ -d "$HOME/.cache/thumbnails" ]]; then
+        info "→ Cleaning thumbnail cache..."
+        find "$HOME/.cache/thumbnails" -type f -atime +30 -delete 2>/dev/null || true
+    fi
+
+    # Trash cleanup
+    if [[ -d "$HOME/.local/share/Trash" ]]; then
+        info "→ Emptying trash..."
+        rm -rf "$HOME/.local/share/Trash/"* 2>/dev/null || true
+    fi
+
+    # Temp files
+    if [[ -d "/tmp" ]]; then
+        info "→ Cleaning /tmp (files older than 7 days)..."
+        sudo find /tmp -type f -atime +7 -user "$USER" -delete 2>/dev/null || true
     fi
 
     # Flatpak/Snap cleanup
     if command -v flatpak &> /dev/null; then
+        info "→ Cleaning Flatpak unused runtimes..."
         flatpak uninstall --user --unused -y 2>/dev/null || true
         sudo flatpak uninstall --unused -y 2>/dev/null || true
         flatpak repair --user 2>/dev/null || true
     fi
     if command -v snap &> /dev/null; then
+        info "→ Cleaning old Snap revisions..."
         sudo snap set system refresh.retain=2 2>/dev/null || true
+        # Удаление старых ревизий снапов
+        snap list --all | awk '/disabled/{print $1, $3}' | \
+        while read snapname revision; do
+            sudo snap remove "$snapname" --revision="$revision" 2>/dev/null || true
+        done
+    fi
+
+    # Docker cleanup (если установлен)
+    if command -v docker &> /dev/null && docker info &>/dev/null; then
+        info "→ Cleaning Docker resources..."
+        docker system prune -af --volumes 2>/dev/null || true
     fi
 }
 
